@@ -13,7 +13,7 @@ class VideoController
 {
 public:
 
-    VideoController();
+    VideoController(const char* file = nullptr);
 
     void start();
 

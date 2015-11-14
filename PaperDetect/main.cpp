@@ -6,15 +6,18 @@
 #include <iostream>
 
 #include "paperdectector.h"
+#include "stylusdetect.h"
 
 using namespace std;
 using namespace cv;
 
-
 int main(int argc, char *argv[])
 {    
-    PaperDectector paperDect;
-    paperDect.start();
+//    PaperDectector paperDect;
+//    paperDect.start();
+
+    StylusDetect stylusDetect("/Users/paulnta/Documents/HEIG4/PDG/test1.m4v");
+    stylusDetect.start();
 
     return 0;
 }

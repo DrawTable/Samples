@@ -15,10 +15,12 @@ LIBS += -L/usr/local/lib -lopencv_calib3d -lopencv_core -lopencv_features2d -lop
 
 SOURCES += main.cpp \
     videocontroller.cpp \
-    paperdectector.cpp
+    paperdectector.cpp \
+    stylusdetect.cpp
 
 HEADERS += \
     videocontroller.h \
     paperdectector.h \
-    utils.h
+    utils.h \
+    stylusdetect.h
 

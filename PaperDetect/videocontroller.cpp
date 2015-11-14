@@ -1,9 +1,17 @@
 #include "videocontroller.h"
 
-VideoController::VideoController()
+VideoController::VideoController(const char* file)
 {
-    // Start webcam
-    cap = new VideoCapture(0);
+
+    if(file != nullptr){
+       // Start with an existing video
+        cap = new VideoCapture(file);
+
+    } else {
+
+        // Start webcam
+        cap = new VideoCapture(0);
+    }
 
     if(!cap->isOpened()){
         cout << "Cannot open the web cam" << endl;
@@ -11,7 +19,7 @@ VideoController::VideoController()
     }
 
     windowName = "MainWindow";
-    namedWindow(windowName, WINDOW_AUTOSIZE);
+    namedWindow(windowName, WINDOW_NORMAL);
 }
 
 
