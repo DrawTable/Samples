@@ -8,7 +8,7 @@
 class PaperDectector : public VideoController
 {
 public:
-    PaperDectector();
+    PaperDectector(const char* file = nullptr);
 
 signals:
 

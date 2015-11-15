@@ -1,8 +1,8 @@
 #include "paperdectector.h"
 #include "utils.h"
 
-PaperDectector::PaperDectector() :
-    VideoController(),
+PaperDectector::PaperDectector(const char * file) :
+    VideoController(file),
     lowH(0), lowS(0), lowV(0), highH(179), highS(255), highV(255),
     lastX(-1), lastY(-1)
 {
@@ -67,6 +67,10 @@ void PaperDectector::handleFrame(Mat &frame)
     frame = frame + imgLines;
     imshow(windowName, frame);
     imshow("control", imgThresholded);
+
+    if(waitKey(33) == int('p')){
+        this->togglePause();
+    }
 }
 
 

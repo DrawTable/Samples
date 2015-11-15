@@ -29,11 +29,15 @@ void VideoController::handleFrame(Mat& frame){
 
 void VideoController::start()
 {
+    bool success;
     Mat frame;
     while(true){
 
-        // Read next frame
-        bool success = cap->read(frame);
+        if(!pause){
+            // Read next frame
+            success = cap->read(frame);
+        }
+
         if(!success){
             cout << "fail to read frame" << endl;
             break;
@@ -46,6 +50,11 @@ void VideoController::start()
             break;
         }
     }
+}
+
+void VideoController::togglePause()
+{
+    this->pause = !this->pause;
 }
 
 VideoController::~VideoController()

@@ -5,29 +5,42 @@
 
 class StylusDetect: public VideoController{
 
-    Mat bgr, orig, frame, trackGreen, trackRed, trackLight;
-    RotatedRect lightRoi;
-    enum LEDS {LED_GREEN, LED_RED};
+    Mat bgr, orig, frame, trackGreen, trackRed;
+    typedef enum {LED_GREEN, LED_RED} LED_TYPE;
 
-    int lowH[2] = {46, 120};  // low HUE    106
-    int lowS[2] = {40, 132};  // low SATURATION 116
-    int lowV[2] = {0, 115};  // high VALUE 145
+    RotatedRect lightRoi[2];
+    Mat trackLight[2];
+    int trackLightHue[2];
 
-    int highH[2] = {87, 179}; // high HUE
-    int highS[2] = {255, 255}; // high SATURATION
-    int highV[2] = {255, 255}; // high VALUE
+    int const windowTrackLightSize = 60;
 
-    int const DEBUG = false;
+    Scalar lowHSV[2];
+    Scalar highHSV[2];
+
+
+    int const DEBUG = true;
     int const RECORD = false;
 
     VideoWriter outputVideo;
 
 public:
     StylusDetect(const char* file = nullptr): VideoController(file){
+
+        lowHSV[LED_GREEN] = Scalar(46,40,0);
+        highHSV[LED_GREEN] = Scalar(87,255,255);
+
+        lowHSV[LED_RED] = Scalar(120,132,115);
+        highHSV[LED_RED] = Scalar(179,255,255);
+
+        trackLightHue[LED_GREEN] = 42;
+        trackLightHue[LED_RED] = 94;
+
+
         if(DEBUG){
             namedWindow("trackGreen", WINDOW_KEEPRATIO);
             namedWindow("trackRed", WINDOW_KEEPRATIO);
-            namedWindow("trackLight", WINDOW_KEEPRATIO);
+            namedWindow("trackLightGreen", WINDOW_KEEPRATIO);
+            namedWindow("trackLightRed", WINDOW_KEEPRATIO);
         }
         if(RECORD){
 
@@ -50,7 +63,7 @@ protected:
     void optimizeThreshold(Mat &frame);
     virtual void handleFrame(Mat &frame);
     void processLedTracking();
-    Point findObjectPosition(Mat &imgThresholded, bool trackLight = false);
+    Point findObjectPosition(Mat &imgThresholded, LED_TYPE led, bool trackLightRed = false);
     void drawRotatedRect(Mat &frame, RotatedRect &rect);
 };
 

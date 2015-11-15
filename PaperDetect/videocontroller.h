@@ -11,11 +11,13 @@ using namespace std;
 
 class VideoController
 {
+    bool pause = false;
 public:
 
     VideoController(const char* file = nullptr);
 
     void start();
+    void togglePause();
 
     ~VideoController();
 
