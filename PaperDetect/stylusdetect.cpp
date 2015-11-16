@@ -1,13 +1,20 @@
 #include "stylusdetect.h"
+#include "line.h"
 
 void StylusDetect::handleFrame(cv::Mat &frame)
 {
     this->frame = frame;
 
+    // original BGR image
     bgr = frame.clone();
+
     cvtColor(frame, frame, CV_BGR2HSV);
+
+    // original HSV image
     orig = frame.clone();
-    trackGreen = frame.clone(); // frame versions in HSV
+
+    // HSV images for led tracking
+    trackGreen = frame.clone();
     trackRed = frame.clone();
 
     processLedTracking();
@@ -19,30 +26,53 @@ void StylusDetect::handleFrame(cv::Mat &frame)
     }
 }
 
+
 void StylusDetect::processLedTracking()
 {
    /* Filter HSV image to isolate leds color
     * This value are importante
     */
+    int i1 = getTickCount();
     inRange(trackGreen, lowHSV[LED_GREEN], highHSV[LED_GREEN], trackGreen);
     inRange(trackRed, lowHSV[LED_RED], highHSV[LED_RED], trackRed);
+    int i2 = getTickCount();
 
     /* Optimize threshold to improve object detection
      */
+    int o1 = getTickCount();
     optimizeThreshold(this->trackGreen);
-    optimizeThreshold(this->trackRed);
+//    optimizeThreshold(this->trackRed);
+    int o2 = getTickCount();
 
     /* Leds are now isolated, we can find their positions
      */
+    int p1 = getTickCount();
     Point positionLedGreen = findObjectPosition(trackGreen, LED_GREEN, true);
     Point positionLedRed = findObjectPosition(trackRed, LED_RED, true);
+    int p2 = getTickCount();
 
     circle(this->bgr, positionLedGreen, 20, Scalar(0,255,0), 5);
     circle(this->bgr, positionLedRed, 20, Scalar(0,0,255), 5);
+    calculatePenPos(positionLedRed, positionLedGreen);
 
     if(DEBUG){
         imshow("trackGreen", trackGreen);
         imshow("trackRed", trackRed);
+    }
+
+    if(PROFILING){
+        double f = getTickFrequency();
+
+        double iTime = (i2- i1) / f;
+        double oTime = (o2- o1) / f;
+        double pTime = (p2- p1) / f;
+        double time = (p2 - i1) / f;
+
+        qDebug("Tracking:\t %f ms", time*1000);
+        qDebug("inRange: \t%f ms", iTime*1000);
+        qDebug("optimze: \t%f ms", oTime*1000);
+        qDebug("position: \t%f ms", pTime*1000);
+        qDebug("\n");
     }
 }
 
@@ -56,6 +86,7 @@ void StylusDetect::processLedTracking()
  */
 Point StylusDetect::findObjectPosition(Mat& imgThresholded, LED_TYPE led, bool trackLight){
 
+    /* calculate estimated center */
     Moments oMoments = moments(imgThresholded);
     Point center;
     double dM01 = oMoments.m01;
@@ -66,6 +97,10 @@ Point StylusDetect::findObjectPosition(Mat& imgThresholded, LED_TYPE led, bool t
         int posX = dM10/dArea;
         int posY = dM01/dArea;
         center = Point(posX, posY);
+    }
+
+    if(DEBUG){
+        drawCross(imgThresholded, center, Scalar(255,255,255), 20);
     }
 
     /* Track LED's light to improve the position.
@@ -90,6 +125,14 @@ Point StylusDetect::findObjectPosition(Mat& imgThresholded, LED_TYPE led, bool t
            inRange(this->trackLight[led], Scalar(trackLightHue[led],0,0), Scalar(255,255,255), this->trackLight[led]);
            optimizeThreshold(this->trackLight[led]);
 
+           if(DEBUG){
+               if(led == LED_RED){
+                   imshow("trackLightRedHSV", this->trackLight[LED_RED]);
+               }
+               else{
+                   imshow("trackLightGreenHSV", this->trackLight[LED_GREEN]);
+               }
+           }
 
            // detect light contour
            Canny(this->trackLight[led], this->trackLight[led], 100, 255);
@@ -101,8 +144,9 @@ Point StylusDetect::findObjectPosition(Mat& imgThresholded, LED_TYPE led, bool t
 
 
            if(DEBUG){ // here we can see, the new exact position by drawing a cross
-            line(this->trackLight[led], Point(lightCenter.x, lightCenter.y -3), Point(lightCenter.x,lightCenter.y + 3 ), Scalar(255,255,255), 1);
-            line(this->trackLight[led], Point(lightCenter.x-3, lightCenter.y), Point(lightCenter.x + 3,lightCenter.y), Scalar(255,255,255), 1);
+               drawCross(this->trackLight[led], Point(windowTrackLightSize/2, windowTrackLightSize/2), Scalar(255,255,255), 1);
+               if(lightCenter.x > 0 && lightCenter.y > 0)
+                drawCross(this->trackLight[led], lightCenter, Scalar(255,255,255), 3);
            }
 
            // improve the position
@@ -130,13 +174,36 @@ Point StylusDetect::findObjectPosition(Mat& imgThresholded, LED_TYPE led, bool t
                 }
            }
 
-       } else {
-           qDebug() << "roi out of range";
        }
     }
 
     return center;
 }
+
+
+void StylusDetect::calculatePenPos(const Point &red, const Point &green){
+    Line a(green,red);
+     a.draw(this->bgr);
+
+    if(estimatePenPos){
+        a.increaseLenght(a.length()*0.6);
+        Line b = a;
+        b.translateY(0);
+        b.translateX(-25);
+
+        circle(this->bgr, b.b, 10, Scalar(0,255,255), 2);
+
+        int x2 = red.x + a.dx();
+
+        b.draw(this->bgr);
+    }
+}
+
+void StylusDetect::drawCross(Mat &frame, Point center, Scalar color, int size){
+    line(frame, Point(center.x, center.y -size), Point(center.x,center.y + size ), color, 1);
+    line(frame, Point(center.x-size, center.y), Point(center.x + size,center.y), color, 1);
+}
+
 
 /**
  * @brief StylusDetect::drawRotatedRect draw a rotated rect on a frame

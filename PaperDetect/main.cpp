@@ -13,12 +13,12 @@ using namespace cv;
 
 int main(int argc, char *argv[])
 {    
-//    PaperDectector paperDect("/Users/paulnta/Documents/HEIG4/PDG/test1.m4v");
+//    PaperDectector paperDect("/Users/paulnta/Documents/HEIG4/PDG/videos/test2.mov");
 //    paperDect.start();
 
-    StylusDetect stylusDetect("/Users/paulnta/Documents/HEIG4/PDG/test2.MOV");
+    StylusDetect stylusDetect("/Users/paulnta/Documents/HEIG4/PDG/videos/test1.m4v");
     stylusDetect.start();
 
-    return 0;
+//    return 0;
 }
 

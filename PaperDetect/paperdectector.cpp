@@ -9,13 +9,14 @@ PaperDectector::PaperDectector(const char * file) :
     namedWindow("control", CV_WINDOW_KEEPRATIO);
 
     // orange
-    lowH = 0;
-    lowS = 82;
-    lowV = 47;
+    // min(75, 94, 117) max(80,181,160)
+    lowH = 75;
+    lowS = 94;
+    lowV = 117;
 
-    highH = 87;
-    highS = 255;
-    highV = 214;
+    highH = 80;
+    highS = 181;
+    highV = 160;
 
     // creattion des slider dans la fenetre "control"
     createTrackbar("lowH",  "control", &lowH, 179);

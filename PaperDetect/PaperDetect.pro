@@ -22,5 +22,6 @@ HEADERS += \
     videocontroller.h \
     paperdectector.h \
     utils.h \
-    stylusdetect.h
+    stylusdetect.h \
+    line.h
 

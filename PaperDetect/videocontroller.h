@@ -11,7 +11,8 @@ using namespace std;
 
 class VideoController
 {
-    bool pause = false;
+
+
 public:
 
     VideoController(const char* file = nullptr);
@@ -22,6 +23,14 @@ public:
     ~VideoController();
 
 protected:
+
+    bool estimatePenPos = false;
+    int const DEBUG = true;
+    int const RECORD = false;
+    int PROFILING = false;
+    bool stop = false;
+    bool pause = false;
+
     VideoCapture* cap;
     string windowName;
     virtual void handleFrame(Mat &frame);
