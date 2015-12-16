@@ -8,6 +8,7 @@ PaperDectector::PaperDectector(const char * file) :
 {
     namedWindow("control", CV_WINDOW_KEEPRATIO);
 
+
     // orange
     // min(75, 94, 117) max(80,181,160)
     lowH = 75;

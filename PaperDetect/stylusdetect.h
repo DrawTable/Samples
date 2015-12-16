@@ -43,25 +43,6 @@ public:
             namedWindow("trackLightRedHSV", WINDOW_KEEPRATIO);
             namedWindow("trackLightGreenHSV", WINDOW_KEEPRATIO);
         }
-
-        /* RECORD DOESN'T WORKS*/
-        if(RECORD){
-
-            Size S = Size((int) cap->get(CV_CAP_PROP_FRAME_WIDTH), (int) cap->get(CV_CAP_PROP_FRAME_HEIGHT));
-
-            outputVideo.open("out.avi",
-                             VideoWriter::fourcc('I','4','2','0'), //cap->get(CV_CAP_PROP_FOURCC) ,
-                             cap->get(CV_CAP_PROP_FPS),S, true);
-
-            if (!outputVideo.isOpened()){
-                std::cout << "!!! Output video could not be opened" << std::endl;
-                return;
-            }
-
-            qDebug() << "output video:" << outputVideo.isOpened() << S.height << "x" << S.width << cap->get(CV_CAP_PROP_FPS) << "fps";
-        }
-
-
     }
 
 protected:

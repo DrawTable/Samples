@@ -25,7 +25,7 @@ public:
 protected:
 
     bool estimatePenPos = false;
-    int const DEBUG = true;
+    int const DEBUG = false;
     int const RECORD = false;
     int PROFILING = false;
     bool stop = false;

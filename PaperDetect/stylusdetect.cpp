@@ -20,10 +20,6 @@ void StylusDetect::handleFrame(cv::Mat &frame)
     processLedTracking();
 
     imshow(this->windowName, bgr);
-
-    if(RECORD){
-        outputVideo.write(this->bgr);
-    }
 }
 
 

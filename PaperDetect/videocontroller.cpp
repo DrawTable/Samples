@@ -48,7 +48,7 @@ void VideoController::start()
         double height = frame.rows * 0.7;
         double width = frame.cols * 0.7;
 
-//        resize(frame, frame, Size(width, height));
+        resize(frame, frame, Size(width, height));
 
         handleFrame(frame);
         int end = getTickCount();
