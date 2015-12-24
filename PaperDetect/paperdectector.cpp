@@ -1,8 +1,8 @@
 #include "paperdectector.h"
 #include "utils.h"
 
-PaperDectector::PaperDectector(const char * file) :
-    VideoController(file),
+PaperDectector::PaperDectector() :
+    VideoController(),
     lowH(0), lowS(0), lowV(0), highH(179), highS(255), highV(255),
     lastX(-1), lastY(-1)
 {

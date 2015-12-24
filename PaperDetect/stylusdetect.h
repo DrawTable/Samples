@@ -20,7 +20,7 @@ class StylusDetect: public VideoController{
     VideoWriter outputVideo;
 
 public:
-    StylusDetect(const char* file = nullptr): VideoController(file){
+    StylusDetect(): VideoController(){
 
         /*
          * Configurations HSV
