@@ -28,7 +28,7 @@ public slots:
 
         for(int i=0; i < 10; i++){
             sendData(QString("data %1 \n").arg(i).toUtf8());
-            sleep(5);
+            sleep(1);
         }
 
         sendData("STOP");
