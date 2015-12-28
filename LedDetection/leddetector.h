@@ -12,10 +12,12 @@ class LedDetector {
     Mat orig, img, hsv, thresholded;
     int lowH = 169, lowS = 21, lowV = 219, highH = 179, highS = 255, highV = 255;
 
-    bool isSelecting = false;
+    bool isSelectingRoi = false, isSelectingHsvRange = false;
     Rect selection;
     Point origin;
-    Mat img_selection;
+    Mat img_selection, hsv_selection;
+
+    int minH = 179, minS = 255, minV= 255, maxH = 0, maxS = 0, maxV = 0;
 
 public:
 
@@ -37,9 +39,13 @@ public:
         LedDetector::getInstance()->selectRoi(event, Point(x,y));
     }
 
-    static void onSelectionMouse(int event, int, int, int, void*){
+    static void onSelectionMouse(int event, int x, int y, int, void*){
+        LedDetector* ld = LedDetector::getInstance();
         if(event == EVENT_LBUTTONDBLCLK)
-            LedDetector::getInstance()->calcHistograms(LedDetector::getInstance()->getImgSelection());
+            ld->calcHistograms(ld->getHsvImgSelection());
+        else
+            ld->findMouseHsvRange(event,x,y);
+
     }
 
     /////////////////////////// public ////////////////////////////////
@@ -67,9 +73,8 @@ public:
     }
 
     void processThreshold(){
-        Mat im;
-        hsv.copyTo(im);
-        inRange(im, Scalar(lowH, lowS, lowV), Scalar(highH,highS,highV), thresholded);
+
+        inRange(hsv, Scalar(lowH, lowS, lowV), Scalar(highH,highS,highV), thresholded);
 
         erode(thresholded, thresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
         dilate(thresholded, thresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
@@ -77,7 +82,7 @@ public:
         erode(thresholded, thresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
 
         if(selection.area() > 0)
-            calcHistograms(img_selection);
+            calcHistograms(hsv_selection);
         showImages();
     }
 
@@ -92,7 +97,7 @@ public:
 
     void selectRoi(int event, Point p){
 
-        if(isSelecting){
+        if(isSelectingRoi){
             selection.x = MIN(p.x, origin.x);
             selection.y = MIN(p.y, origin.y);
             selection.width = abs(p.x - origin.x);
@@ -107,10 +112,10 @@ public:
         case EVENT_LBUTTONDOWN:
             origin = p;
             selection = Rect(p,p);
-            isSelecting = true;
+            isSelectingRoi = true;
             break;
         case EVENT_LBUTTONUP:
-            isSelecting = false;
+            isSelectingRoi = false;
             if(selection.area() > 0){
                 handleSelection();
             } else {
@@ -123,10 +128,46 @@ public:
         }
     }
 
+    void findMouseHsvRange(int event, int x, int y){
+
+        switch (event) {
+        case EVENT_LBUTTONDOWN:
+            // start selecting range
+            isSelectingHsvRange = true;
+            break;
+        case EVENT_LBUTTONUP:
+            // stop selecting range
+            isSelectingHsvRange = false;
+            cout << "H: " << "[" << minH << ":" << maxH << "]\n"
+                 << "S: " << "[" << minS << ":" << maxS << "]\n"
+                 << "V: " << "[" << minV << ":" << maxV << "]\n";
+
+            minH = 179, minS = 255, minV= 255, maxH = 0, maxS = 0, maxV = 0;
+            break;
+        }
+
+        if(isSelectingHsvRange){
+            Vec3b pixel = hsv_selection.at<Vec3b>(Point(x,y));
+            int H = pixel[0];
+            int S = pixel[1];
+            int V = pixel[2];
+            cout << "current H: " << H << " S: " << S << " V: " << V << endl;
+
+            minH = H < minH ? H: minH;
+            minS = S < minS ? S: minS;
+            minV = V < minV ? V: minV;
+
+            maxH = H > maxH ? H: maxH;
+            maxS = S > maxS ? S: maxS;
+            maxV = V > maxV ? V: maxV;
+        }
+    }
+
     void handleSelection(){
         namedWindow("selection", 0);            // show window selection
         setMouseCallback("selection", onSelectionMouse);
         img_selection = orig(selection);         // get the region of interset
+        hsv_selection = hsv(selection);
         imshow("selection", img_selection);
     }
 
@@ -164,26 +205,26 @@ public:
 
         for(int i=1; i < bins[0]; ++i){
             Scalar color(255,0,0);
-            rectangle( img_h_hist,
-                       Point( i*h_bin_w, H ),
-                       Point( (i+1)*h_bin_w, H - cvRound( h_hist.at<float>(i)*H/255.0)),
-                       color, -1 );
+            rectangle(img_h_hist,
+                      Point((i-1)*h_bin_w, H),
+                      Point(i*h_bin_w, H - cvRound(h_hist.at<float>(i-1))),
+                      color, CV_FILLED);
         }
 
-        for(int i=1; i < bins[0]; ++i){
+        for(int i=1; i < bins[1]; ++i){
             Scalar color(0,255,0);
-            rectangle( img_s_hist,
-                       Point( i*h_bin_w, H ),
-                       Point( (i+1)*s_bin_w, H - cvRound( s_hist.at<float>(i)*H/255.0)),
-                       color, -1 );
+            rectangle(img_s_hist,
+                      Point((i-1)*s_bin_w, H),
+                      Point(i*s_bin_w, H - cvRound(s_hist.at<float>(i-1))),
+                      color, CV_FILLED);
         }
 
-        for(int i=1; i < bins[0]; ++i){
+        for(int i=1; i < bins[2]; ++i){
             Scalar color(0,0,255);
-            rectangle( img_v_hist,
-                       Point( i*v_bin_w, H ),
-                       Point( (i+1)*v_bin_w, H - cvRound( v_hist.at<float>(i)*H/255.0)),
-                       color, -1 );
+            rectangle(img_v_hist,
+                      Point((i-1)*v_bin_w, H),
+                      Point(i*v_bin_w, H - cvRound(v_hist.at<float>(i-1))),
+                      color, CV_FILLED);
         }
 
 
@@ -210,7 +251,7 @@ public:
 
     ///////////////////////// Getter&Setter ////////////////////////////
 
-    Mat getImgSelection(){ return img_selection; }
+    Mat getHsvImgSelection(){ return hsv_selection; }
 
 private:
 
