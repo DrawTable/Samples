@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QTextStream>
+#include <QThread>
 
 class Worker: public QObject{
     Q_OBJECT
@@ -13,45 +14,27 @@ class Worker: public QObject{
 
 public slots:
 
-    void doWork(){
-        socket = new QTcpSocket(this);
-        socket->connectToHost("localhost",5003);
+    void doWork();
 
-        connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-        connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(showErrors(QAbstractSocket::SocketError)));
-        connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-        connect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWritten(qint64)));
-    }
+    void connected();
 
-    void connected(){
-        qDebug() << "connected";
+    void showErrors(QAbstractSocket::SocketError err);
 
-        for(int i=0; i < 10; i++){
-            sendData(QString("data %1 \n").arg(i).toUtf8());
-            sleep(1);
-        }
+    void readyRead();
 
-        sendData("STOP");
-        emit finished();
-    }
-
-    void showErrors(QAbstractSocket::SocketError err){
-        qDebug() << err;
-    }
-
-    void readyRead(){
-        QString line = socket->readLine();
-        qDebug() << "Received: " << line;
-    }
-
-    void sendData(const char* data){
-        socket->write(data);
-        socket->flush();
-    }
+    void sendData(const char* data);
 
     void bytesWritten(qint64 n){
         qDebug("%lld bytes written",n);
     }
+
+    void mouseMouve(int x, int y);
+
+    void mousePressed();
+
+    void mouseReleased();
+
+    void quit();
 
 signals:
     void finished();

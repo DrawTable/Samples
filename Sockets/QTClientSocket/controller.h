@@ -11,18 +11,19 @@ class Controller: public QObject{
 
     QThread thread;
 public:
-    Controller(){
-        Worker* worker = new Worker;
-        worker->moveToThread(&thread);
-        connect(&thread, SIGNAL(started()), worker, SLOT(doWork()));
-        connect(worker, SIGNAL(finished()), &thread, SLOT(quit()));
-        connect(&thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(&thread, SIGNAL(finished()), QCoreApplication::instance(), SLOT(quit()));
-    }
+    Controller();
 
     void start(){
         thread.start();
     }
+
+
+
+signals:
+    void mouseMove(int x, int y);
+    void mousePressed();
+    void mouseReleased();
+    void quit();
 
 
 };
