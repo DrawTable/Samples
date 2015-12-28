@@ -6,14 +6,21 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QTextStream>
+#include <QThread>
 
 class Worker: public QObject{
     Q_OBJECT
     QTcpSocket* socket;
 
+public:
+    Worker(){
+        qDebug() << "Worker contruct: " << QThread::currentThreadId() << endl;
+    }
+
 public slots:
 
     void doWork(){
+        qDebug() << "Worker thread do work: " << QThread::currentThreadId() << endl;
         socket = new QTcpSocket(this);
         socket->connectToHost("localhost",5003);
 
@@ -28,7 +35,7 @@ public slots:
 
         for(int i=0; i < 10; i++){
             sendData(QString("data %1 \n").arg(i).toUtf8());
-            sleep(1);
+            QThread::sleep(1);
         }
 
         sendData("STOP");
@@ -45,6 +52,8 @@ public slots:
     }
 
     void sendData(const char* data){
+
+        qDebug() << "sendData " << data << "executed by : " << QThread::currentThreadId() << endl;
         socket->write(data);
         socket->flush();
     }
@@ -52,6 +61,8 @@ public slots:
     void bytesWritten(qint64 n){
         qDebug("%lld bytes written",n);
     }
+
+    void test();
 
 signals:
     void finished();

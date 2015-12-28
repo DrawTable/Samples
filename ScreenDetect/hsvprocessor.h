@@ -5,7 +5,7 @@
 
 class HSVProcessor
 {
-    Mat orig_img, hsv, thresholded, result, warped;
+    Mat orig_img, hsv, thresholded, contoured, warped;
     Mat transformMatrix;
     int lowH, lowS, lowV, highH, highS, highV;
 
@@ -26,7 +26,7 @@ public:
 
     HSVProcessor(string filename);
     int currentImage;
-    void initImage(string filename);
+    void processImage(string filename);
     void threshold();
     void show();
     void optimizeThreshold();

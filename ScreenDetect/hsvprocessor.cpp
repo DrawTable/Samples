@@ -1,11 +1,14 @@
 #include "hsvprocessor.h"
 
+// This function has to be static
+// defined in main.cpp
 void refresh(int, void*);
 void onMouse( int event, int x, int y, int, void*);
 void changeImage(int, void*);
 
 HSVProcessor::HSVProcessor(string filename)
 {
+    // Create windows
     mainWindow = "main window";
     debugWindow = "debug";
     controlWindow = "control";
@@ -17,22 +20,27 @@ HSVProcessor::HSVProcessor(string filename)
     namedWindow(warpedWindow, WINDOW_KEEPRATIO);
     namedWindow(controlWindow, WINDOW_KEEPRATIO);
     setMouseCallback(mainWindow, onMouse);
+
+    // add trackbars for hsv range
     initTrackBars();
 
-    initImage(filename);
+    // handle the image
+    processImage(filename);
 }
 
-void HSVProcessor::initImage(string filename)
+
+void HSVProcessor::processImage(string filename)
 {
+    // init the origingal
     orig_img = imread(filename);
-    result = Mat::zeros(orig_img.rows, orig_img.cols, CV_8UC3);
+    contoured = Mat::zeros(orig_img.rows, orig_img.cols, CV_8UC3);
     toHsv();
 }
 
 
+// convert to hsv color space
 void HSVProcessor::toHsv()
 {
-    qDebug() <<"depth:" <<  orig_img.depth()<< "type: " << orig_img.type();
     cvtColor(orig_img, hsv, CV_BGR2HSV);
     threshold();
 }
@@ -48,7 +56,7 @@ void HSVProcessor::threshold()
 
 void HSVProcessor::show()
 {
-    imshow(debugWindow, result);
+    imshow(debugWindow, contoured);
     imshow(mainWindow, orig_img);
     imshow(warpedWindow, warped);
     imshow(controlWindow, thresholded);
@@ -88,12 +96,11 @@ void HSVProcessor::findScreen(Mat &thresholded)
         // sort contours by area
         std::sort(contours.begin(),contours.end(), contour_compare_area);
 
-        // find the screen contour
+        // find the screen contours
         int n = contours.size();
         for(int i=0; i < n; ++i){
 
             // approximate the contour
-
             approxPolyDP(contours.at(i), approx, 0.05 * arcLength(contours.at(i), true), true );
 
             // our screen has 4 point when approximated
@@ -101,7 +108,7 @@ void HSVProcessor::findScreen(Mat &thresholded)
                 qDebug() << "found a contours with for points (" << i << ")";
 
                 // draw screen
-                polylines(result, approx, true, Scalar(0,0,255), 3);
+                polylines(contoured, approx, true, Scalar(0,0,255), 3);
                 transformImage(approx);
                 break;
             }
@@ -184,7 +191,7 @@ void HSVProcessor::initTrackBars()
     highS = 255;    // 255
     highV = 255;    // 255
 
-    // creattion des slider dans la fenetre "control"
+    // creation des slider dans la fenetre "control"
     createTrackbar("lowH",  "control", &lowH, 179, refresh);
     createTrackbar("lowS",  "control", &lowS, 255, refresh);
     createTrackbar("lowV",  "control", &lowV, 255, refresh);
@@ -199,8 +206,6 @@ void HSVProcessor::initTrackBars()
 bool compare_points(const Point& p1, const Point& p2){
     return (p1.x + p1.y) < (p2.x + p2.y);
 }
-
-
 
 vector<Point> HSVProcessor::getOrderedPoints(vector<Point> rect)
 {

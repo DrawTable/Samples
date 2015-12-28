@@ -42,7 +42,7 @@ void refresh(int, void*){
 
 void changeImage(int, void*){
     hsvProc.currentImage++;
-    hsvProc.initImage(images[hsvProc.currentImage % nImage]);
+    hsvProc.processImage(images[hsvProc.currentImage % nImage]);
 }
 
 void onMouse( int event, int x, int y, int, void*){
