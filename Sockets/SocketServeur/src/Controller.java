@@ -1,3 +1,6 @@
+import java.awt.AWTException;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
 import java.io.*;
 import java.net.Socket;
 
@@ -31,21 +34,44 @@ public class Controller extends Thread{
         try {
 
             boolean stop = false;
+            String line;
+            String splitedLine[];
+            Robot mouseController = new Robot();
             do {
-                String line = reader.readLine();
-
+                line = reader.readLine();
+                splitedLine = line.split(":");
                 System.out.println("received: " + line);
+                
+                switch (splitedLine[0]) {
+				case "release":
+					System.out.println("MOUSE RELEASED");
+					mouseController.mouseRelease(InputEvent.BUTTON1_MASK);
+					break;
+				case "press":
+					System.out.println("MOUSE PRESSED");
+					mouseController.mousePress(InputEvent.BUTTON1_MASK);
+					break;
+				case "move" : 
+					System.out.println("MOUSE MOVED");
+					int x = Integer.valueOf(splitedLine[1]);
+					int y = Integer.valueOf(splitedLine[2]);
+					mouseController.mouseMove(x, y);
+					break;
+				case "quit" :
+					stop = true;
+					System.out.println("QUIT");
+					break;
 
-                if(line == null || line.equals("STOP")){
-                    System.out.println("Ok thanks");
-                    stop = true;
-                }
-
+				default:
+					System.out.println("Wrong command format");
+					break;
+				}
+                
             }while(!stop);
 
             socket.close();
 
-        } catch (IOException e) {
+        } catch (IOException | AWTException e) {
             e.printStackTrace();
         }
     }

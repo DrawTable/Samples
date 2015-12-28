@@ -19,48 +19,27 @@ public:
 
 public slots:
 
-    void doWork(){
-        qDebug() << "Worker thread do work: " << QThread::currentThreadId() << endl;
-        socket = new QTcpSocket(this);
-        socket->connectToHost("localhost",5003);
+   void doWork();
 
-        connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-        connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(showErrors(QAbstractSocket::SocketError)));
-        connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-        connect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWritten(qint64)));
-    }
+    void connected();
 
-    void connected(){
-        qDebug() << "connected";
+    void showErrors(QAbstractSocket::SocketError err);
 
-        for(int i=0; i < 10; i++){
-            sendData(QString("data %1 \n").arg(i).toUtf8());
-            QThread::sleep(1);
-        }
+    void readyRead();
 
-        sendData("STOP");
-        emit finished();
-    }
-
-    void showErrors(QAbstractSocket::SocketError err){
-        qDebug() << err;
-    }
-
-    void readyRead(){
-        QString line = socket->readLine();
-        qDebug() << "Received: " << line;
-    }
-
-    void sendData(const char* data){
-
-        qDebug() << "sendData " << data << "executed by : " << QThread::currentThreadId() << endl;
-        socket->write(data);
-        socket->flush();
-    }
+    void sendData(const char* data);
 
     void bytesWritten(qint64 n){
         qDebug("%lld bytes written",n);
     }
+
+    void mouseMouve(int x, int y);
+
+    void mousePressed();
+
+    void mouseReleased();
+
+    void quit();
 
     void test();
 

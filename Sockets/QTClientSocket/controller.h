@@ -13,16 +13,7 @@ class Controller: public QObject{
     QThread thread;
     Worker* worker;
 public:
-    Controller(){
-        qDebug() << "Controller contruct: " << QThread::currentThreadId() << endl;
-        worker = new Worker;
-        worker->moveToThread(&thread);
-        connect(&thread, SIGNAL(started()), worker, SLOT(doWork()));
-        connect(worker, SIGNAL(finished()), &thread, SLOT(quit()));
-        connect(&thread, SIGNAL(finished()), worker, SLOT(deleteLater()));
-        connect(&thread, SIGNAL(finished()), QCoreApplication::instance(), SLOT(quit()));
-        connect(this, SIGNAL(dataReady(const char*)), worker, SLOT(sendData(const char*)));
-    }
+    Controller();
 
     void start(){
         thread.start();
@@ -38,6 +29,14 @@ public slots:
         emit dataReady("HELLO FROM OUTSIDE");
     }
 
+
+
+
+signals:
+    void mouseMove(int x, int y);
+    void mousePressed();
+    void mouseReleased();
+    void quit();
 
 
 };
