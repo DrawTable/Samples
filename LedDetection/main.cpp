@@ -28,13 +28,13 @@ void testVideo(){
 int main()
 {
 
-    Mat src = imread("/Users/paulnta/Desktop/Test_LedDetect/5.png");
-    LedDetector* ld = LedDetector::getInstance();
-    ld->setImage(src);
-    ld->debugLedDetection();
-    waitKey(0);
+//    Mat src = imread("/Users/paulnta/Desktop/Test_LedDetect/5.png");
+//    LedDetector* ld = LedDetector::getInstance();
+//    ld->setImage(src);
+//    ld->debugLedDetection();
+//    waitKey(0);
 
-//    testVideo();
+    testVideo();
     return 0;
 }
 

@@ -10,7 +10,8 @@ using namespace cv;
 class LedDetector {
 
     Mat orig, img, hsv, thresholded;
-    int lowH = 169, lowS = 21, lowV = 219, highH = 179, highS = 255, highV = 255;
+    int lowH = 172, lowS = 43, lowV = 193, highH = 6, highS = 118, highV = 255;
+    int h_bins = 31, s_bins = 30, v_bins = 40;
 
     bool isSelectingRoi = false, isSelectingHsvRange = false;
     Rect selection;
@@ -74,7 +75,21 @@ public:
 
     void processThreshold(){
 
-        inRange(hsv, Scalar(lowH, lowS, lowV), Scalar(highH,highS,highV), thresholded);
+        if(lowH <= highH){
+            inRange(hsv, Scalar(lowH, lowS, lowV), Scalar(highH,highS,highV), thresholded);
+        } else {
+            vector<Mat> hsv_planes;
+            split(hsv,hsv_planes);
+
+            Mat maskH, maskS, maskV;
+            inRange(hsv_planes[0], highH, lowH, maskH);    // inRange Hue (max -> min)
+            inRange(hsv_planes[1], lowS, highS, maskS);    // inRange Sat (normal)
+            inRange(hsv_planes[2], lowV, highV, maskV);    // inRange Val (normal)
+
+            bitwise_and(maskS, maskV, thresholded);        // merge Sat & Val
+            bitwise_not(maskH, maskH);                     // invese Hue range
+            bitwise_and(maskH, thresholded, thresholded);  // merge All
+        }
 
         erode(thresholded, thresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
         dilate(thresholded, thresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)));
@@ -175,7 +190,7 @@ public:
         // split hsv channels
         vector<Mat> hsv_planes;
         split(hsv_img, hsv_planes);
-        int bins[] = {179,255,255};
+        int bins[] = {h_bins,s_bins,v_bins};
         float range256[] = {0,256};
         float range179[] = {0,179};
         const float *h_range = {range179}, *s_range = {range256}, *v_range = {range256};
@@ -237,13 +252,7 @@ public:
         line(img_v_hist, Point( W * lowV / 255.0, 0), Point(W * lowV / 255.0, H-1), Scalar(255,255,0), 1);
         line(img_v_hist, Point( W * highV / 255.0, 0), Point(W * highV / 255.0, H-1), Scalar(255,255,0), 1);
 
-        /**
-         * 179 -> 169
-         * 512 -> x
-         *
-         * 200 -> 100
-         * 512 -> x    W * val / maxVal
-         */
+
         imshow("h_hist", img_h_hist);
         imshow("s_hist", img_s_hist);
         imshow("v_hist", img_v_hist);
