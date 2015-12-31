@@ -9,9 +9,10 @@ using namespace cv;
 
 class LedDetector {
 
-    Mat orig, img, hsv, thresholded;
+    Mat orig, img, hsv, thresholded, ledThresholded;
     int lowH = 172, lowS = 43, lowV = 193, highH = 6, highS = 118, highV = 255;
-    int h_bins = 31, s_bins = 30, v_bins = 40;
+    int led_lowH = 0, led_lowS = 0, led_lowV = 0, led_highH = 179, led_highS = 255, led_highV = 255;
+    int h_bins = 31, s_bins = 16, v_bins = 40;
 
     bool isSelectingRoi = false, isSelectingHsvRange = false;
     Rect selection;
@@ -19,6 +20,12 @@ class LedDetector {
     Mat img_selection, hsv_selection;
 
     int minH = 179, minS = 255, minV= 255, maxH = 0, maxS = 0, maxV = 0;
+
+    Rect lightTracking;
+    RNG rng;
+
+    Mat forgroundMask;
+    Point ledPos;
 
 public:
 
@@ -32,7 +39,11 @@ public:
     }
 
     static void onTrackBarChanged(int, void*){
-        LedDetector::getInstance()->processThreshold();
+        LedDetector::getInstance()->trackLed();
+    }
+
+    static void onLedTrackBarChanged(int, void*){
+        LedDetector::getInstance()->trackLed();
     }
 
 
@@ -57,9 +68,20 @@ public:
         cvtColor(this->img, hsv, CV_BGR2HSV);
     }
 
-    void debugLedDetection(){
+    void backgroundSubtraction(){
+
+//       bgs.operator()(this->img, forgroundMask);
+//        imshow("bg_subtraction", forgroundMask);
+    }
+
+    void setDebugBgSubstraction(){
+        namedWindow("bg_subtraction", 0);
+    }
+
+    Point debugLedDetection(){
         namedWindow("source", 0);
         namedWindow("threshold", 0);
+        namedWindow("ledThresholded", 0);
         namedWindow("masked", 0);
         setMouseCallback("source", onMouse);
         setMouseCallback("threshold", onMouse);
@@ -70,14 +92,40 @@ public:
         createTrackbar("highH", "threshold", &highH, 179, onTrackBarChanged);
         createTrackbar("highS", "threshold", &highS, 255, onTrackBarChanged);
         createTrackbar("highV", "threshold", &highV, 255, onTrackBarChanged);
-        processThreshold();
+
+        createTrackbar("Led lowH", "ledThresholded", &led_lowH, 179, onLedTrackBarChanged);
+        createTrackbar("Led lowS", "ledThresholded", &led_lowS, 255, onLedTrackBarChanged);
+        createTrackbar("Led lowV", "ledThresholded", &led_lowV, 255, onLedTrackBarChanged);
+        createTrackbar("Led highH", "ledThresholded", &led_highH, 179, onLedTrackBarChanged);
+        createTrackbar("Led highS", "ledThresholded", &led_highS, 255, onLedTrackBarChanged);
+        createTrackbar("Led highV", "ledThresholded", &led_highV, 255, onLedTrackBarChanged);
+        trackLed();
+
+        return ledPos;
     }
 
-    void processThreshold(){
+    void trackLed(){
+        trackLedLight();
+        trackLedCenter();
+    }
 
+    void trackLedCenter(){
+
+        if(checkLightTrackingRect()){
+            Mat LedRoi = hsv(lightTracking);
+            inRange(LedRoi, Scalar(led_lowH, led_lowS, led_lowV), Scalar(led_highH, led_highS, led_highV), ledThresholded);
+        }
+        showImages();
+    }
+
+    void trackLedLight(){
+
+        // Hue range is circular [0:179] deg
         if(lowH <= highH){
+            // min Hue value <= max value (i.e [20:160])
             inRange(hsv, Scalar(lowH, lowS, lowV), Scalar(highH,highS,highV), thresholded);
         } else {
+            // min Hue value >= max value (i.e: [160:20])
             vector<Mat> hsv_planes;
             split(hsv,hsv_planes);
 
@@ -98,7 +146,45 @@ public:
 
         if(selection.area() > 0)
             calcHistograms(hsv_selection);
-        showImages();
+
+
+        // find Led light bounding rect
+        vector<vector<Point>> contours;
+        vector<Point> points;
+        findContours(thresholded, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+        if(contours.size() > 0){
+            for(int i= 0; i < contours.size(); ++i){
+                for(int j =0; j < contours.at(i).size(); ++j)
+                    points.push_back(contours.at(i).at(j));
+            }
+            vector<Point> hull;
+            convexHull(points, hull, true, true);
+            lightTracking =  minAreaRect(hull).boundingRect();
+            int add_width = cvRound(lightTracking.width*0.3);
+            int add_height = cvRound(lightTracking.height*0.3);
+            lightTracking.width += add_width;
+            lightTracking.height += add_height;
+            lightTracking.x -= cvRound(add_width/2.0);
+            lightTracking.y -= cvRound(add_height/2.0);
+
+            ledPos = Point(lightTracking.x + (lightTracking.width/2), lightTracking.y + (lightTracking.height/2));
+
+            if(checkLightTrackingRect())
+                rectangle(img, lightTracking, Scalar(0,255,0), 2);
+        } else {
+            ledPos = Point(-1,-1);
+        }
+
+
+    }
+
+    bool checkLightTrackingRect(){
+        return 0 <= lightTracking.x
+                && 0 <= lightTracking.width
+                && lightTracking.x + lightTracking.width <= img.cols
+                && 0 <= lightTracking.y
+                && 0 <= lightTracking.height
+                && lightTracking.y + lightTracking.height <= img.rows;
     }
 
     void showImages(){
@@ -108,6 +194,13 @@ public:
         Mat masked;
         orig.copyTo(masked, thresholded);
         imshow("masked", masked);
+
+        if(!ledThresholded.empty() && checkLightTrackingRect()){
+            Mat masked, orig_roi;
+            orig_roi = orig(lightTracking);
+            orig_roi.copyTo(masked, ledThresholded);
+            imshow("ledThresholded", masked);
+        }
     }
 
     void selectRoi(int event, Point p){
@@ -266,7 +359,9 @@ private:
 
     /////////////////////////// private ////////////////////////////////
     LedDetector(){
+    }
 
+    ~LedDetector(){
     }
 
 };

@@ -1,5 +1,6 @@
 QT += core
 QT -= gui
+QT += multimedia
 
 TARGET = LedDetection
 CONFIG += console
@@ -12,8 +13,11 @@ LIBS += -L/usr/local/lib -lopencv_calib3d -lopencv_core -lopencv_features2d -lop
 TEMPLATE = app
 
 SOURCES += main.cpp \
-    leddetector.cpp
+    leddetector.cpp \
+    threadvideocap.cpp
 
 HEADERS += \
-    leddetector.h
+    leddetector.h \
+    threadvideocap.h \
+    controller.h
 
